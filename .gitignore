@@ -2,3 +2,6 @@
 /target/
 gene-rpc-framework.iml
 /rpc-framework-core/rpc-framework-core.iml
+/example-client/example-client.iml
+/example-interface/example-interface.iml
+/example-server/example-server.iml

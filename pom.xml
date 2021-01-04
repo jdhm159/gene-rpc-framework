@@ -4,18 +4,33 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>github.jdhm159</groupId>
+  <groupId>github.genelin</groupId>
   <artifactId>gene-rpc-framework</artifactId>
   <packaging>pom</packaging>
   <version>1.0-SNAPSHOT</version>
+
   <properties>
+    <!-- serialization-kryo-->
     <kryo.version>4.0.2</kryo.version>
+    <!-- lombok-->
     <lombok.version>1.18.12</lombok.version>
+    <!-- netty-->
+    <netty.version>4.1.42.Final</netty.version>
+    <!-- test-->
+    <junit.juniter.engine.version>5.5.2</junit.juniter.engine.version>
+    <junit.platform.runner.version>1.5.2</junit.platform.runner.version>
+    <!-- log-->
+    <slf4j.version>1.7.25</slf4j.version>
+    <!-- zookeeper curator-->
+    <zookeeper.curator.version>2.13.0</zookeeper.curator.version>
+
   </properties>
+
   <modules>
     <module>rpc-framework-core</module>
     <module>example-client</module>
     <module>example-server</module>
+    <module>example-service-api</module>
   </modules>
 
   <dependencies>
@@ -25,25 +40,43 @@
       <version>${lombok.version}</version>
       <scope>provided</scope>
     </dependency>
-    <!--test-->
+    <!-- test-->
     <dependency>
       <groupId>org.junit.jupiter</groupId>
-      <artifactId>junit-jupiter-api</artifactId>
-      <version>5.6.2</version>
+      <artifactId>junit-jupiter-engine</artifactId>
+      <version>${junit.juniter.engine.version}</version>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>org.junit.platform</groupId>
+      <artifactId>junit-platform-runner</artifactId>
+      <version>${junit.platform.runner.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <!-- log-->
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+      <version>${slf4j.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-simple</artifactId>
+      <version>${slf4j.version}</version>
+    </dependency>
+
 
   </dependencies>
 
-<!--  <build>-->
-<!--    <plugins>-->
-<!--      <plugin>-->
-<!--        <groupId>org.apache.maven.plugins</groupId>-->
-<!--        <artifactId>maven-surefire-plugin</artifactId>-->
-<!--        <configuration>-->
-<!--          <skipTests>true</skipTests>-->
-<!--        </configuration>-->
-<!--      </plugin>-->
-<!--    </plugins>-->
-<!--  </build>-->
+  <!--  <build>-->
+  <!--    <plugins>-->
+  <!--      <plugin>-->
+  <!--        <groupId>org.apache.maven.plugins</groupId>-->
+  <!--        <artifactId>maven-surefire-plugin</artifactId>-->
+  <!--        <configuration>-->
+  <!--          <skipTests>true</skipTests>-->
+  <!--        </configuration>-->
+  <!--      </plugin>-->
+  <!--    </plugins>-->
+  <!--  </build>-->
 </project>
