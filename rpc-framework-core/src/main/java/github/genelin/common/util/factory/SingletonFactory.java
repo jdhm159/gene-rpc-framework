@@ -1,4 +1,4 @@
-package github.genelin.common.util;
+package github.genelin.common.util.factory;
 
 import github.genelin.common.entity.Holder;
 import java.lang.reflect.Constructor;

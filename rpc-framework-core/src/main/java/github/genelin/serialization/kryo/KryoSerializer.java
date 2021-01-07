@@ -1,14 +1,14 @@
-package github.jdhm159.serialization.kryo;
+package github.genelin.serialization.kryo;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.Kryo.DefaultInstantiatorStrategy;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 import com.esotericsoftware.kryo.pool.KryoPool;
-import github.jdhm159.remoting.dto.RPCRequest;
-import github.jdhm159.remoting.dto.RPCResponse;
-import github.jdhm159.serialization.SerializeException;
-import github.jdhm159.serialization.Serializer;
+import github.genelin.remoting.dto.RpcRequest;
+import github.genelin.remoting.dto.RpcResponse;
+import github.genelin.common.exception.SerializeException;
+import github.genelin.serialization.Serializer;
 import java.io.*;
 import org.objenesis.strategy.StdInstantiatorStrategy;
 
@@ -23,8 +23,8 @@ public class KryoSerializer implements Serializer {
         Kryo kryo = new Kryo();
         // configure here
         // 要确保注册顺序一致
-        kryo.register(RPCRequest.class);
-        kryo.register(RPCResponse.class);
+        kryo.register(RpcRequest.class);
+        kryo.register(RpcResponse.class);
         // 显示指定实例化器，首先使用默认无参构造策略DefaultInstantiatorStrategy，若创建对象失败再采用StdInstantiatorStrategy
         kryo.setInstantiatorStrategy(new DefaultInstantiatorStrategy(new StdInstantiatorStrategy()));
         return kryo;

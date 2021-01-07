@@ -1,4 +1,4 @@
-import github.genelin.common.util.SingletonFactory;
+import github.genelin.common.util.factory.SingletonFactory;
 import github.genelin.remoting.transport.ServiceProviderImpl;
 import org.junit.Assert;
 import org.junit.jupiter.api.Test;

@@ -1,4 +1,4 @@
-package github.jdhm159.serialization;
+package github.genelin.serialization;
 
 /**
  * 所有的序列化类都要实现该接口

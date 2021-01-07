@@ -1,5 +1,6 @@
-import github.jdhm159.serialization.kryo.KryoSerializer;
+import github.genelin.serialization.kryo.KryoSerializer;
 import org.junit.jupiter.api.Test;
+
 
 /**
  * @author gene lin
