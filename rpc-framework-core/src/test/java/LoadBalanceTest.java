@@ -1,14 +1,13 @@
-import com.sun.javafx.fxml.expression.KeyPath;
 import github.genelin.common.entity.RpcServiceProperties;
 import github.genelin.loadbalance.LoadBalance;
 import github.genelin.loadbalance.loadbalancer.RandomLoadBalancer;
 import github.genelin.registry.zookeeper.ZookeeperServiceDiscovery;
 import github.genelin.registry.zookeeper.listener.ServiceRegistryConnectionListener;
-import github.genelin.registry.zookeeper.util.CuratorUtil;
+import github.genelin.registry.zookeeper.util.CuratorUtils;
 import github.genelin.remoting.constants.RpcConstants;
+import github.genelin.remoting.transport.ServiceProviderImpl;
 import java.net.*;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
@@ -20,15 +19,15 @@ public class LoadBalanceTest {
 
     @Test
     public void randomLoadBalancerTestWithCurator() throws UnknownHostException {
-        CuratorUtil.createClient(new ServiceRegistryConnectionListener());
+        CuratorUtils.getClient().start();
         RpcServiceProperties rpcServiceProperties = RpcServiceProperties.builder().interfaceName("gene.TestService").build();
         String rpcServiceName = rpcServiceProperties.toRPCServiceName();
         String hostAddress = InetAddress.getLocalHost().getHostAddress();
         InetSocketAddress url1 = new InetSocketAddress(hostAddress
             , RpcConstants.DEFAULT_PORT);
         InetSocketAddress url2 = new InetSocketAddress("127.0.0.1", 21255);
-        CuratorUtil.createEphemeralNode(rpcServiceName, url1);
-        CuratorUtil.createEphemeralNode(rpcServiceName, url2);
+        CuratorUtils.createEphemeralNode(rpcServiceName, url1);
+        CuratorUtils.createEphemeralNode(rpcServiceName, url2);
 
         RandomLoadBalancer randomLoadBalancer = new RandomLoadBalancer();
         InetSocketAddress inetSocketAddress = new ZookeeperServiceDiscovery().lookupService(rpcServiceProperties, randomLoadBalancer);

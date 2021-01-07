@@ -1,11 +1,12 @@
 package github.genelin.registry.zookeeper.util;
 
 import github.genelin.common.enums.RpcConfigEnum;
+import github.genelin.common.entity.Holder;
 import github.genelin.common.util.PropertiesFileUtils;
 import java.net.*;
 import java.util.List;
-import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.curator.RetryPolicy;
 import org.apache.curator.framework.CuratorFramework;
@@ -38,10 +39,12 @@ public class CuratorUtils {
     public static final int MAX_RETRIES = 10;
     public static final int MAX_SLEEP_MS = 500;
 
-    // 每个RPCClient/RPCServer复用一个Zookeeper客户端连接，该实例是线程安全的
-    private static volatile CuratorFramework zkClient;
     private static final String connectString;
     private static final String nameSpace;
+    // 每个RPCClient/RPCServer复用一个Zookeeper客户端连接，该实例是线程安全的
+    private static volatile CuratorFramework zkClient;
+
+    private static final ConcurrentHashMap<String, Holder<PathChildrenCache>> pathChildrenCaches = new ConcurrentHashMap<>();
 
     static {
         Properties rpcConfig = PropertiesFileUtils.getPropertiesByFileName(RpcConfigEnum.RPC_CONFIG_FILENAME.getPropertyName());
@@ -60,6 +63,9 @@ public class CuratorUtils {
         getClient().close();
     }
 
+    /**
+     * 返回zk客户端实例（未start）
+     */
     public static CuratorFramework getClient() {
         if (zkClient == null) {
             synchronized (CuratorUtils.class) {
@@ -111,79 +117,78 @@ public class CuratorUtils {
         return createdNodeName;
     }
 
+//    public static byte[] getNodeData(String path) {
+//        try {
+//            return getClient().getData().forPath(path);
+//        } catch (Exception e) {
+//            log.error("Service discovery failure: try to get data of node [{}]", path, e);
+//        }
+//        return new byte[0];
+//    }
+
+    public static void clearCache(){
+        pathChildrenCaches.clear();
+    }
+
     /**
-     * 获得服务清单 并 注册watcher
-     *
-     * @param rpcServiceName 服务标识
-     * @return 服务清单（URL list）
+     * 使用PathChildrenCache注册监听事件，借助Cache同步初始化同时初始化本地缓存list
      */
-    public static List<String> getChildNodeList(String rpcServiceName, Map<String, List<String>> serviceList) {
-        String path = buildPath(rpcServiceName);
-        List<String> nodes = null;
-        try {
-            nodes = getClient().getChildren().forPath(path);
-            registerWatcher(rpcServiceName, serviceList.get(rpcServiceName));
-        } catch (Exception e) {
-            log.error("Service discovery failure: try to get children nodes of path [{}]", path, e);
-        }
-        return nodes;
-    }
-
-    public static byte[] getNodeData(String path) {
-        try {
-            return getClient().getData().forPath(path);
-        } catch (Exception e) {
-            log.error("Service discovery failure: try to get data of node [{}]", path, e);
-        }
-        return new byte[0];
-    }
-
     public static void registerWatcher(String rpcServiceName, List<String> providers) {
-        PathChildrenCache childrenCache = new PathChildrenCache(getClient(), rpcServiceName, true);
+        Holder<PathChildrenCache> cacheHolder = pathChildrenCaches.get(rpcServiceName);
+        if (cacheHolder == null) {
+            pathChildrenCaches.putIfAbsent(rpcServiceName, new Holder<>());
+            cacheHolder = pathChildrenCaches.get(rpcServiceName);
+        }
+        PathChildrenCache pathChildCache = cacheHolder.get();
+        // double check lock, using holder as the object lock
+        if (pathChildCache == null) {
+            synchronized (cacheHolder) {
+                pathChildCache = cacheHolder.get();
+                if (pathChildCache == null) {
+                    pathChildCache = createPathChildrenCache(buildPath(rpcServiceName), providers);
+                    cacheHolder.set(pathChildCache);
+                }
+            }
+        }
+    }
+
+    private static PathChildrenCache createPathChildrenCache(String path, List<String> providers) {
+        // 建议传入自己构建的线程池，保证线程可控
+        PathChildrenCache pathChildCache = new PathChildrenCache(getClient(), path, true);
         PathChildrenCacheListener l = new PathChildrenCacheListener() {
             @Override
             public void childEvent(CuratorFramework client, PathChildrenCacheEvent event) {
                 ChildData data = event.getData();
                 switch (event.getType()) {
                     case CHILD_ADDED:
-                        handleChildAddEvent(rpcServiceName, providers, data);
+                        log.info("Child node added to path of the rpc service[{}]", path);
+                        providers.add(new String(data.getData()));
                         break;
                     case CHILD_REMOVED:
-                        handleChildRemoveEvent(rpcServiceName, providers, data);
+                        log.info("Child node remove from path of the rpc service[{}]", path);
+                        providers.remove(new String(data.getData()));
                         break;
                     default:
                         break;
                 }
             }
         };
-        childrenCache.getListenable().addListener(l);
+        pathChildCache.getListenable().addListener(l);
         try {
             // 同步初始化Cache
-            childrenCache.start(StartMode.BUILD_INITIAL_CACHE);
+            pathChildCache.start(StartMode.BUILD_INITIAL_CACHE);
         } catch (Exception e) {
-            log.error("Watcher注册: PathCache监听失败 rpcServiceName[{}]", rpcServiceName);
+            log.error("Watcher注册: PathCache监听失败 rpcServiceName[{}]", path);
         }
-    }
-
-    private static void handleChildAddEvent(String rpcServiceName, List<String> providers, ChildData data) {
-        log.info("Child node added to path of the rpc service[{}]", rpcServiceName);
-        synchronized (providers) {
-            providers.add(new String(data.getData()));
-        }
-    }
-
-    private static void handleChildRemoveEvent(String rpcServiceName, List<String> providers, ChildData data) {
-        log.info("Child node remove from path of the rpc service[{}]", rpcServiceName);
-        synchronized (providers) {
-            providers.remove(new String(data.getData()));
-        }
+        log.info("Watcher注册：成功同步初始化 pathChildrenCache 及 本地服务清单缓存");
+        return pathChildCache;
     }
 
     private static String buildChildPath(String rpcServiceName) {
         return buildPath(rpcServiceName) + "/p";
     }
 
-    public static String buildPath(String rpcServiceName) {
+    private static String buildPath(String rpcServiceName) {
         return "/" + rpcServiceName;
     }
 

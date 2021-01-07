@@ -1,9 +1,16 @@
 import github.genelin.common.entity.RpcServiceProperties;
+import github.genelin.common.extension.ExtensionLoader;
+import github.genelin.common.util.factory.SingletonFactory;
+import github.genelin.registry.ServiceDiscovery;
+import github.genelin.registry.ServiceRegistry;
 import github.genelin.registry.zookeeper.listener.ServiceRegistryConnectionListener;
 import github.genelin.registry.zookeeper.util.CuratorUtils;
 import github.genelin.remoting.constants.RpcConstants;
+import github.genelin.remoting.transport.ServiceProviderImpl;
 import java.io.*;
 import java.net.*;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
@@ -14,7 +21,11 @@ import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
 import org.apache.curator.framework.recipes.cache.PathChildrenCacheListener;
 import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.zookeeper.CreateMode;
+import org.junit.Assert;
 import org.junit.jupiter.api.Test;
+import service.HelloService;
+import service.HelloServiceImpl1;
+import service.HelloServiceImpl2;
 
 /**
  * @author gene lin
@@ -24,56 +35,28 @@ import org.junit.jupiter.api.Test;
 public class CuratorTest {
 
 
-//    @Test
-//    public void createClient() {
-//        CuratorFramework client = CuratorUtils.getClient(new ServiceRegistryConnectionListener());
-//        log.info("" + CuratorUtils.isConnecting());
-//    }
-//
-//    @Test
-//    public void createEphemeralNode() throws UnknownHostException {
-//        CuratorUtils.getClient(new ServiceRegistryConnectionListener());
-//        String name = RpcServiceProperties.builder().interfaceName("gene.TestService").build().toRPCServiceName();
-//        InetSocketAddress url = new InetSocketAddress(InetAddress.getLocalHost().getHostAddress()
-//            , RpcConstants.DEFAULT_PORT);
-////        InetSocketAddress url = new InetSocketAddress(InetAddress.getLocalHost(), RpcConstants.DEFAULT_PORT);
-//        CuratorUtils.createEphemeralNode(name, url);
-//    }
-//
-//    @Test
-//    public void getChildrenNode() throws UnknownHostException {
-//        CuratorUtils.getClient(new ServiceRegistryConnectionListener());
-//        String name = RpcServiceProperties.builder().interfaceName("gene.TestService").build().toRPCServiceName();
-//        String hostAddress = InetAddress.getLocalHost().getHostAddress();
-//        InetSocketAddress url1 = new InetSocketAddress(hostAddress
-//            , RpcConstants.DEFAULT_PORT);
-//        InetSocketAddress url2 = new InetSocketAddress("127.0.0.1", 21255);
-//        CuratorUtils.createEphemeralNode(name, url1);
-//        CuratorUtils.createEphemeralNode(name, url2);
-//
-//        System.out.println(hostAddress);
-//        System.out.println(url1);
-//        System.out.println(url2);
-//
-//        System.out.println(CuratorUtils.getChildNodeList(name));
-//    }
-//
-//    @Test
-//    public void StringTest() throws UnknownHostException {
-//        System.out.println(InetAddress.getLocalHost());
-//        System.out.println(InetAddress.getLocalHost().getHostName());
-//        System.out.println(InetAddress.getLocalHost().getHostAddress());
-//
-//        InetSocketAddress inetSocketAddress = new InetSocketAddress(InetAddress.getLocalHost().getHostAddress(), RpcConstants.DEFAULT_PORT);
-//        String[] ipAndPort = inetSocketAddress.toString().split(":");
-//        InetSocketAddress inetSocketAddress1 = new InetSocketAddress(ipAndPort[0], Integer.parseInt(ipAndPort[1]));
-//
-//        System.out.println(ipAndPort[0]);
-//        System.out.println(ipAndPort[1]);
-//        System.out.println(inetSocketAddress);
-//        System.out.println(inetSocketAddress1);
-//    }
+    @Test
+    public void createClient1() throws InterruptedException {
+        CuratorFramework client = CuratorUtils.getClient();
+        CuratorFramework c = CuratorUtils.getClient();
+        Assert.assertEquals(client, c);
+        Assert.assertFalse(CuratorUtils.isConnecting());
+        client.start();
+        Assert.assertTrue(CuratorUtils.isConnecting());
+    }
 
+
+    @Test
+    public void createEphemeralNode() throws UnknownHostException {
+        CuratorFramework client = CuratorUtils.getClient();
+        client.start();
+        String name = RpcServiceProperties.builder().interfaceName("gene.TestService").build().toRPCServiceName();
+        InetSocketAddress url = new InetSocketAddress(InetAddress.getLocalHost().getHostAddress()
+            , RpcConstants.DEFAULT_PORT);
+        CuratorUtils.createEphemeralNode(name, url);
+        // result：
+        // path = /gene-rpc/gene.TestService/p0000000001  ，value = /localhost:22159
+    }
 
     @Test
     public void testPathChildrenCache() {
@@ -131,6 +114,47 @@ public class CuratorTest {
             e.printStackTrace();
         }
 
+    }
+
+    @Test
+    public void registerWatcherTest() throws InterruptedException {
+        CuratorFramework client = CuratorUtils.getClient();
+        client.start();
+
+        List<String> urlList = new ArrayList<>();
+        CuratorUtils.registerWatcher("HelloService",urlList);
+
+        Thread.sleep(1000);
+        Assert.assertEquals(urlList.size(),2);
+
+        CuratorUtils.createEphemeralNode("HelloService", new InetSocketAddress("127.0.0.1",22125));
+
+        Thread.sleep(1000);
+        Assert.assertEquals(urlList.size(),3);
+
+        for (int i = 0; i < urlList.size(); i++) {
+            log.info(urlList.get(i));
+        }
+
+    }
+
+    @Test
+    public void createClientForServiceRegistry() throws InterruptedException {
+        // 由ServiceProvider进行获取
+        ServiceProviderImpl provider = SingletonFactory.getSingletonObject(ServiceProviderImpl.class);
+        provider.registerService(new HelloServiceImpl1());
+        RpcServiceProperties properties = RpcServiceProperties.builder().interfaceName(HelloService.class.getName()).group("impl2").build();
+        provider.registerService(properties, new HelloServiceImpl2());
+        provider.publishServices();
+
+    }
+
+    @Test
+    public void createClientForServiceDiscovery() throws InterruptedException {
+        ServiceDiscovery serviceDiscovery = ExtensionLoader.getExtensionLoader(ServiceDiscovery.class).getDefaultExtension();
+        RpcServiceProperties rpcServiceProperties = RpcServiceProperties.builder().interfaceName(HelloService.class.getName()).build();
+        InetSocketAddress inetSocketAddress = serviceDiscovery.lookupService(rpcServiceProperties);
+        log.info(String.valueOf(inetSocketAddress));
     }
 
 
