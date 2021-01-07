@@ -1,4 +1,4 @@
-package github.jdhm159.serialization;
+package github.genelin.common.exception;
 
 /**
  * @author gene lin
