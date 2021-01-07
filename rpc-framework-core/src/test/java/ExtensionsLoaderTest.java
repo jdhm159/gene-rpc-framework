@@ -3,34 +3,13 @@ import github.genelin.common.extension.SPI;
 import github.genelin.registry.ServiceRegistry;
 import org.junit.Assert;
 import org.junit.Test;
+import service.HelloService;
 
 /**
  * @author gene lin
  * @createTime 2021/1/4 16:48
  */
 public class ExtensionsLoaderTest {
-
-    @SPI("impl2")
-    public interface HelloService {
-
-        String hello();
-    }
-
-    public static class HelloServiceImpl1 implements HelloService {
-
-        @Override
-        public String hello() {
-            return "This is impl1";
-        }
-    }
-
-    public static class HelloServiceImpl2 implements HelloService {
-
-        @Override
-        public String hello() {
-            return "This is impl2";
-        }
-    }
 
     @Test
     public void getExtensionTest() {

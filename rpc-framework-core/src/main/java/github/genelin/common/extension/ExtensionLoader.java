@@ -1,5 +1,6 @@
 package github.genelin.common.extension;
 
+import github.genelin.common.entity.Holder;
 import java.io.*;
 import java.net.*;
 import java.util.Arrays;

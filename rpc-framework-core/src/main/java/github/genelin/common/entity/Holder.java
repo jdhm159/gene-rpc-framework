@@ -1,4 +1,4 @@
-package github.genelin.common.extension;
+package github.genelin.common.entity;
 
 /**
  * Helper Class for hold a value.
