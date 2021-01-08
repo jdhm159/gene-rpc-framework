@@ -12,7 +12,7 @@ public interface ServiceRegistry {
     /**
      * 进行服务注册
      *
-     * @param serviceProperties 服务标识
+     * @param rpcServiceName 服务标识
      */
-    void registry(String serviceProperties);
+    void registry(String rpcServiceName);
 }

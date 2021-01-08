@@ -45,6 +45,27 @@ public class CuratorTest {
         Assert.assertTrue(CuratorUtils.isConnecting());
     }
 
+    @Test
+    public void createClient2() throws InterruptedException {
+        CuratorFramework client = CuratorUtils.getClient();
+        Assert.assertFalse(CuratorUtils.isConnecting());
+        client.start();
+        Assert.assertTrue(CuratorUtils.isConnecting());
+        // 此时断开server
+        for (;;){
+            Thread.sleep(4*1000);
+            System.out.println(CuratorUtils.isConnecting());
+            // connection Timeout 及 session timeout 后仍会被认为是started
+        }
+    }
+
+    @Test
+    public void clientStartTest() throws InterruptedException {
+        CuratorFramework client = CuratorUtils.getClient();
+        client.start();
+        Thread.sleep(10 * 1000);
+        CuratorUtils.registerWatcher("helloService", new ArrayList<>());
+    }
 
     @Test
     public void createEphemeralNode() throws UnknownHostException {

@@ -22,7 +22,7 @@
     <!-- log-->
     <slf4j.version>1.7.25</slf4j.version>
     <!-- zookeeper curator-->
-    <zookeeper.curator.version>2.13.0</zookeeper.curator.version>
+    <zookeeper.curator.version>4.2.0</zookeeper.curator.version>
 
   </properties>
 

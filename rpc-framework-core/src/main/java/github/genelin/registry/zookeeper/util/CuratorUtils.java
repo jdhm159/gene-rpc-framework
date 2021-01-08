@@ -3,6 +3,7 @@ package github.genelin.registry.zookeeper.util;
 import github.genelin.common.enums.RpcConfigEnum;
 import github.genelin.common.entity.Holder;
 import github.genelin.common.util.PropertiesFileUtils;
+import java.io.*;
 import java.net.*;
 import java.util.List;
 import java.util.Properties;
@@ -126,7 +127,17 @@ public class CuratorUtils {
 //        return new byte[0];
 //    }
 
-    public static void clearCache(){
+    public static void clearCache() {
+        for (Holder<PathChildrenCache> childrenCacheHolder : pathChildrenCaches.values()) {
+            PathChildrenCache childrenCache = childrenCacheHolder.get();
+            if (childrenCache != null) {
+                try {
+                    childrenCache.close();
+                } catch (IOException e) {
+                    log.error("Fail to close pathChildrenCache");
+                }
+            }
+        }
         pathChildrenCaches.clear();
     }
 
@@ -153,6 +164,7 @@ public class CuratorUtils {
     }
 
     private static PathChildrenCache createPathChildrenCache(String path, List<String> providers) {
+        log.info("Watcher注册：创建pathChildrenCache监听于path[{}]", path);
         // 建议传入自己构建的线程池，保证线程可控
         PathChildrenCache pathChildCache = new PathChildrenCache(getClient(), path, true);
         PathChildrenCacheListener l = new PathChildrenCacheListener() {
@@ -176,11 +188,12 @@ public class CuratorUtils {
         pathChildCache.getListenable().addListener(l);
         try {
             // 同步初始化Cache
+            // 会阻塞等待session的重新建立
             pathChildCache.start(StartMode.BUILD_INITIAL_CACHE);
+            log.info("Watcher注册：成功同步初始化 pathChildrenCache 及 本地服务清单缓存");
         } catch (Exception e) {
-            log.error("Watcher注册: PathCache监听失败 rpcServiceName[{}]", path);
+            log.error("Watcher注册: PathCache监听失败 rpcServiceName[{}]", path, e);
         }
-        log.info("Watcher注册：成功同步初始化 pathChildrenCache 及 本地服务清单缓存");
         return pathChildCache;
     }
 

@@ -1,0 +1,2 @@
+hash=github.genelin.loadbalance.loadbalancer.ConsistentHashLoadBalancer
+random=github.genelin.loadbalance.loadbalancer.RandomLoadBalancer

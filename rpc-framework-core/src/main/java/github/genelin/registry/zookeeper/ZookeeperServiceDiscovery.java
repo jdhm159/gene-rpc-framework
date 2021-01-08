@@ -5,13 +5,11 @@ import github.genelin.common.extension.ExtensionLoader;
 import github.genelin.loadbalance.LoadBalance;
 import github.genelin.registry.ServiceDiscovery;
 import github.genelin.registry.zookeeper.listener.ServiceDiscoveryConnectionListener;
-import github.genelin.registry.zookeeper.listener.ServiceRegistryConnectionListener;
 import github.genelin.registry.zookeeper.util.CuratorUtils;
 import java.net.*;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
+import java.util.concurrent.CopyOnWriteArrayList;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.curator.framework.CuratorFramework;
 
@@ -23,7 +21,7 @@ import org.apache.curator.framework.CuratorFramework;
 public class ZookeeperServiceDiscovery implements ServiceDiscovery {
 
     // key: rpcServiceName       value: URI list
-    private final Map<String, List<String>> serviceLists = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, List<String>> serviceLists = new ConcurrentHashMap<>();
 
     /**
      * 客户端默认负载均衡算法实现
@@ -43,30 +41,35 @@ public class ZookeeperServiceDiscovery implements ServiceDiscovery {
      * @param loadBalancer 指定使用的负载均衡算法
      */
     public InetSocketAddress lookupService(RpcServiceProperties rpcServiceProperties, LoadBalance loadBalancer) {
+        // 先建立Curator client与zk server的连接
+        if (!CuratorUtils.isConnecting()) {
+            startClient();
+        }
         String rpcServiceName = rpcServiceProperties.toRPCServiceName();
         // 先从缓存获取服务清单
         List<String> urlList = serviceLists.get(rpcServiceName);
         if (urlList == null) {
             log.info("Try to look up service provider from zk server...");
-            if (!CuratorUtils.isConnecting()) {
-                CuratorFramework client = CuratorUtils.getClient();
-                client.getConnectionStateListenable().addListener(new ServiceDiscoveryConnectionListener(serviceLists));
-                client.start();
-                log.info("Curator[zookeeper] client start successfully...");
-            }
-            List<String> childNodeList = CuratorUtils.getChildNodeList(rpcServiceName, serviceLists);
-            if (childNodeList != null) {
-                urlList = childNodeList.parallelStream()
-                    .map(nodeName -> new String(CuratorUtils.getNodeData(CuratorUtils.buildPath(rpcServiceName) + "/" + nodeName)))
-                    .filter(x -> x.length() != 0).map(x -> x.replace("/", "")).collect(Collectors.toList());
-                serviceLists.put(rpcServiceName, urlList);
-                return buildUrl(loadBalancer.select(urlList));
-            }
+            serviceLists.putIfAbsent(rpcServiceName, new CopyOnWriteArrayList<>());
+            urlList = serviceLists.get(rpcServiceName);
+            // 注册Watcher，PathChildrenCache同步初始化并对本地缓存进行初始化，保证单例，只会初始化一次
+            CuratorUtils.registerWatcher(rpcServiceName, urlList);
         }
-        return null;
+        return buildUrl(loadBalancer.select(urlList));
+    }
+
+    private void startClient() {
+        CuratorFramework client = CuratorUtils.getClient();
+        client.getConnectionStateListenable().addListener(new ServiceDiscoveryConnectionListener(serviceLists));
+        client.start();
+        log.info("Curator[zookeeper] client start successfully...");
     }
 
     private InetSocketAddress buildUrl(String url) {
+        if (url == null) {
+            log.info("Can not find any service provider");
+            return null;
+        }
         String[] ipAndPort = url.split(":");
         try {
             if (ipAndPort.length != 2) {

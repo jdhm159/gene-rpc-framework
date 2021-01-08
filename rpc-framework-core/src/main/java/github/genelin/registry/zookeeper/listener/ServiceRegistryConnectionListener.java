@@ -19,20 +19,9 @@ public class ServiceRegistryConnectionListener extends AbstractSessionConnection
         this.serviceProvider = serviceProvider;
     }
     @Override
-    protected boolean doReconnect(CuratorFramework curatorFramework) {
-        boolean result = false;
-        try {
-            result = curatorFramework.getZookeeperClient().blockUntilConnectedOrTimedOut();
-            if (result){
-                // 重新发布服务，写入临时节点
-                serviceProvider.publishService();
-                log.info("Success to reconnect to zk server");
-            }else {
-                log.info("Fail to reconnect to zk server");
-            }
-        } catch (InterruptedException e) {
-            log.error("Fail to reconnect to server...", e);
-        }
-        return result;
+    protected void afterReconnected(CuratorFramework curatorFramework) {
+        // 重新发布服务，写入临时节点
+        serviceProvider.publishServices();
+        log.info("After service registry reconnect: republic the service to zk server");
     }
 }
