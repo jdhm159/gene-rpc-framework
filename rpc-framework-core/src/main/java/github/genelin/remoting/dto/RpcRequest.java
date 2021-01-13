@@ -1,4 +1,4 @@
-package github.jdhm159.remoting.dto;
+package github.genelin.remoting.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -17,7 +17,7 @@ import lombok.ToString;
 @Setter
 @Getter
 @ToString
-public class RPCRequest {
+public class RpcRequest {
 
     private String interfaceName;
 

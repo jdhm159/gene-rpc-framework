@@ -1,4 +1,4 @@
-package github.jdhm159.remoting.dto;
+package github.genelin.remoting.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -19,7 +19,7 @@ import lombok.ToString;
 @Getter
 @ToString
 @Builder
-public class RPCMessage {
+public class RpcMessage {
 
     private byte serialization;
 
