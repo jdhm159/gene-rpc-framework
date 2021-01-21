@@ -1,5 +1,7 @@
 package github.genelin.remoting.constants;
 
+import github.genelin.common.enums.SerializationTypeEnum;
+
 /**
  * @author gene lin
  * @createTime 2020/12/7 9:14
@@ -22,5 +24,13 @@ public interface RpcConstants {
     byte RPC_RESPONSE = (byte) 0x02;
     byte HEARTBEAT_REQUEST = (byte) 0x03;
     byte HEARTBEAT_RESPONSE = (byte) 0x04;
+
+    // serialization
+    byte DEFAULT_SERIALIZATION = SerializationTypeEnum.KRYO.getId();
+
+    String PING = "ping";
+    String PONG = "pong";
+
+    int DEFAULT_CONNECT_TIMEOUT_MS = 3000;
 
 }

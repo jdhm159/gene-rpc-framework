@@ -207,34 +207,32 @@ public final class ExtensionLoader<T> {
                     }
                     line = line.trim();
                     if (line.length() > 0) {
-                        try {
-                            String name = null;
-                            int i = line.indexOf('=');
-                            if (i > 0) {
-                                // 以等于号 = 为界，截取键与值
-                                name = line.substring(0, i).trim();
-                                line = line.substring(i + 1).trim();
+                        String name = null;
+                        int i = line.indexOf('=');
+                        if (i > 0) {
+                            // 以等于号 = 为界，截取键与值
+                            name = line.substring(0, i).trim();
+                            line = line.substring(i + 1).trim();
+                        }
+                        if (line.length() > 0) {
+                            Class<?> c = extensionClasses.get(name);
+                            if (c == null) {
+                                // 加载类，并对类进行缓存
+                                c = classLoader.loadClass(line);
+                                // 存储名称到 Class 的映射关系
+                                extensionClasses.put(name, c);
                             }
-                            if (line.length() > 0) {
-                                Class<?> c = extensionClasses.get(name);
-                                if (c == null) {
-                                    // 加载类，并对类进行缓存
-                                    c = classLoader.loadClass(line);
-                                    // 存储名称到 Class 的映射关系
-                                    extensionClasses.put(name, c);
-                                }
-                            }
-                        } catch (ClassNotFoundException e) {
-                            log.error("Failed to load extension class...", e);
-                            throw new RuntimeException("Failed to load extension class...");
                         }
                     }
                 }
             } finally {
                 reader.close();
             }
+        } catch (ClassNotFoundException e) {
+            log.error("Failed to load extension class...", e);
+            throw new RuntimeException("Failed to load extension class...");
         } catch (Exception t) {
-            log.error("Exception when load extension class...", t);
+            log.error("Exception occurs when load extension class...", t);
             throw new RuntimeException("Exception when load extension class...");
         }
     }

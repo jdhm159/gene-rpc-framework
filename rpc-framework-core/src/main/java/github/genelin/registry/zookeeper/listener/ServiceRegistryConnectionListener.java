@@ -20,7 +20,9 @@ public class ServiceRegistryConnectionListener extends AbstractSessionConnection
     }
     @Override
     protected void afterReconnected(CuratorFramework curatorFramework) {
-        // 重新发布服务，写入临时节点
+        // 将缓存的临时节点名称清理
+        CuratorUtils.clearRegistryCache();
+        // 重新发布服务，写入新的临时节点
         serviceProvider.publishServices();
         log.info("After service registry reconnect: republic the service to zk server");
     }

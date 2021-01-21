@@ -67,7 +67,7 @@ public class ServiceProviderImpl implements ServiceProvider {
     }
 
     @Override
-    public Object getServiceInstance(String rpcServiceName) {
-        return servicesInstances.get(rpcServiceName);
+    public Object getServiceInstance(RpcServiceProperties properties) {
+        return servicesInstances.get(properties.toRPCServiceName());
     }
 }

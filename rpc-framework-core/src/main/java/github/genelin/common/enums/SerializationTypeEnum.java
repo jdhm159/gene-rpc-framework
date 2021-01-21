@@ -1,6 +1,7 @@
 package github.genelin.common.enums;
 
 import lombok.AllArgsConstructor;
+import lombok.Getter;
 
 /**
  * @author gene lin
@@ -8,9 +9,11 @@ import lombok.AllArgsConstructor;
  */
 
 @AllArgsConstructor
+@Getter
 public enum SerializationTypeEnum {
-    KRYO((byte) 0x01, "Kryo"),
-    PROTOSTUFF((byte) 0x02, "ProtoStuff");
+
+    KRYO((byte) 0x01, "kryo"),
+    PROTOSTUFF((byte) 0x02, "protostuff");
 
     private final byte id;
     private final String name;

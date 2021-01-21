@@ -1,5 +1,6 @@
 package github.genelin.remoting.dto;
 
+import github.genelin.common.entity.RpcServiceProperties;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -27,10 +28,18 @@ public class RpcRequest {
 
     private Object[] paramsValue;
 
-    private int requestId;
+    private String requestId;
 
     private String group;
 
     // the service interface version is different from the framework version
     private String version;
+
+    public RpcServiceProperties toRpcServiceProperties(){
+        return RpcServiceProperties.builder()
+            .interfaceName(interfaceName)
+            .group(group)
+            .version(version)
+            .build();
+    }
 }

@@ -7,7 +7,9 @@ import java.io.*;
 import java.net.*;
 import java.util.List;
 import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArraySet;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.curator.RetryPolicy;
 import org.apache.curator.framework.CuratorFramework;
@@ -47,6 +49,8 @@ public class CuratorUtils {
 
     private static final ConcurrentHashMap<String, Holder<PathChildrenCache>> pathChildrenCaches = new ConcurrentHashMap<>();
 
+    private static final Set<String> registeredNodeNames = new CopyOnWriteArraySet<>();
+
     static {
         Properties rpcConfig = PropertiesFileUtils.getPropertiesByFileName(RpcConfigEnum.RPC_CONFIG_FILENAME.getPropertyName());
         connectString = rpcConfig.getProperty(RpcConfigEnum.ZOOKEEPER_SERVER_URL.getPropertyName());
@@ -58,10 +62,6 @@ public class CuratorUtils {
 
     public static boolean isConnecting() {
         return zkClient != null && zkClient.getState().equals(CuratorFrameworkState.STARTED);
-    }
-
-    public static void closeSession() {
-        getClient().close();
     }
 
     /**
@@ -103,7 +103,7 @@ public class CuratorUtils {
      *
      * @param rpcServiceName 服务标识名
      */
-    public static String createEphemeralNode(String rpcServiceName, InetSocketAddress url) {
+    public static void createEphemeralNode(String rpcServiceName, InetSocketAddress url) {
         String createdNodeName = null;
         try {
             createdNodeName = getClient().create()
@@ -115,30 +115,7 @@ public class CuratorUtils {
         } catch (Exception e) {
             log.error("Service publish failure: when creating the node [{}]", rpcServiceName, e);
         }
-        return createdNodeName;
-    }
-
-//    public static byte[] getNodeData(String path) {
-//        try {
-//            return getClient().getData().forPath(path);
-//        } catch (Exception e) {
-//            log.error("Service discovery failure: try to get data of node [{}]", path, e);
-//        }
-//        return new byte[0];
-//    }
-
-    public static void clearCache() {
-        for (Holder<PathChildrenCache> childrenCacheHolder : pathChildrenCaches.values()) {
-            PathChildrenCache childrenCache = childrenCacheHolder.get();
-            if (childrenCache != null) {
-                try {
-                    childrenCache.close();
-                } catch (IOException e) {
-                    log.error("Fail to close pathChildrenCache");
-                }
-            }
-        }
-        pathChildrenCaches.clear();
+        registeredNodeNames.add(createdNodeName);
     }
 
     /**
@@ -161,6 +138,39 @@ public class CuratorUtils {
                 }
             }
         }
+    }
+
+    /**
+     * 程序正常退出时，清理本地registry在注册中心注册的临时节点
+     */
+    public static void clearRegistry(){
+        log.info("Clear all registered node...");
+        for (String registeredNodeName : registeredNodeNames) {
+            try {
+                getClient().delete().forPath(registeredNodeName);
+            } catch (Exception e) {
+                log.error("Fail to delete Registered Node[{}]", registeredNodeName);
+            }
+        }
+        getClient().close();
+    }
+
+    public static void clearDiscoveryCache() {
+        for (Holder<PathChildrenCache> childrenCacheHolder : pathChildrenCaches.values()) {
+            PathChildrenCache childrenCache = childrenCacheHolder.get();
+            if (childrenCache != null) {
+                try {
+                    childrenCache.close();
+                } catch (IOException e) {
+                    log.error("Fail to close pathChildrenCache");
+                }
+            }
+        }
+        pathChildrenCaches.clear();
+    }
+
+    public static void clearRegistryCache(){
+        registeredNodeNames.clear();
     }
 
     private static PathChildrenCache createPathChildrenCache(String path, List<String> providers) {

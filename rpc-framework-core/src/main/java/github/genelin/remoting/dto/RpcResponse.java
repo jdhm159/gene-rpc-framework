@@ -1,5 +1,6 @@
 package github.genelin.remoting.dto;
 
+import github.genelin.common.enums.RpcResponseCodeEnum;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -17,13 +18,32 @@ import lombok.ToString;
 @Getter
 @ToString
 @Builder
-public class RpcResponse {
+public class RpcResponse<T> {
 
-    private int requestId;
+    private String requestId;
 
-    private int code;     // 响应码
+    private Integer code;     // 响应码
 
-    private int length;     // data内容长度
+    private String message;
 
-    private byte[] data;
+    private T data;
+
+    public static <R> RpcResponse<R> success(R data, String requestId){
+        RpcResponse<R> result = new RpcResponse<>();
+        result.setCode(RpcResponseCodeEnum.SUCCESS.getCode());
+        result.setMessage(RpcResponseCodeEnum.SUCCESS.getMessage());
+        result.setRequestId(requestId);
+        if (data != null){
+            result.setData(data);
+        }
+        return result;
+    }
+
+    public static RpcResponse<Object> fail(RpcResponseCodeEnum responseCodeEnum, String requestId){
+        return (RpcResponse<Object>) RpcResponse.builder()
+            .code(responseCodeEnum.getCode())
+            .message(responseCodeEnum.getMessage())
+            .requestId(requestId)
+            .build();
+    }
 }

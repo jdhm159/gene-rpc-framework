@@ -8,6 +8,7 @@ import github.genelin.remoting.dto.RpcRequest;
 import github.genelin.remoting.dto.RpcResponse;
 import github.genelin.serialization.Serializer;
 import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import java.util.Arrays;
@@ -23,10 +24,8 @@ import lombok.extern.slf4j.Slf4j;
 public class RpcMessageDecoder extends LengthFieldBasedFrameDecoder {
 
     /**
-     * lengthFieldOffset    魔数及其他首部占7bytes（4+1+1+1）
-     * lengthFieldLength    length类型为int，所以占4bytes
-     * lengthAdjustment     length是后面body数据的长度，因此无需要调整
-     * initialBytesToStrip  无需截掉首部内容
+     * lengthFieldOffset    魔数及其他首部占7bytes（4+1+1+1） lengthFieldLength    length类型为int，所以占4bytes lengthAdjustment
+     * length是后面body数据的长度，因此无需要调整 initialBytesToStrip  无需截掉首部内容
      *
      * 提取完整帧（头部+主体数据部分）
      */
@@ -80,19 +79,18 @@ public class RpcMessageDecoder extends LengthFieldBasedFrameDecoder {
             .serialization(serializationId)
             .build();
 
-        if (messageType == RpcConstants.HEARTBEAT_REQUEST) {
-            //...
-        } else if (messageType == RpcConstants.HEARTBEAT_RESPONSE) {
-            // ...
-        } else {
-            Serializer serializer = ExtensionLoader.getExtensionLoader(Serializer.class)
-                .getExtension(SerializationTypeEnum.getName(serializationId));
+        Serializer serializer = ExtensionLoader.getExtensionLoader(Serializer.class)
+            .getExtension(SerializationTypeEnum.getName(serializationId));
 
-            if (messageType == RpcConstants.RPC_REQUEST) {
+        switch (messageType) {
+            case RpcConstants.RPC_REQUEST:
                 result.setData(serializer.deserialize(body, RpcRequest.class));
-            } else {
+                break;
+            case RpcConstants.RPC_RESPONSE:
                 result.setData(serializer.deserialize(body, RpcResponse.class));
-            }
+                break;
+            default:
+                result.setData(serializer.deserialize(body, String.class));
         }
 
         return result;

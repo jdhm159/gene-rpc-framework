@@ -22,7 +22,7 @@ public class ServiceDiscoveryConnectionListener extends AbstractSessionConnectio
     @Override
     protected void afterSessionTimeout(CuratorFramework curatorFramework) {
         serviceLists.clear();
-        CuratorUtils.clearCache();
+        CuratorUtils.clearDiscoveryCache();
         log.info("After session timeout: finish clearing cache");
     }
 }

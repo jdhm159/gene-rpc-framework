@@ -19,6 +19,6 @@ public interface ServiceProvider {
 
     void publishServices();
 
-    Object getServiceInstance(String rpcServiceName);
+    Object getServiceInstance(RpcServiceProperties properties);
 
 }

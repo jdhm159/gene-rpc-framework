@@ -1,6 +1,5 @@
 import github.genelin.common.entity.RpcServiceProperties;
-import github.genelin.remoting.transport.RpcServer;
-import github.genelin.remoting.transport.netty.server.NettyServer;
+import github.genelin.remoting.transport.netty.server.NettyRpcServer;
 import service.HelloService;
 import service.HelloServiceImpl;
 
@@ -12,7 +11,7 @@ public class ServerMain {
 
     public static void main(String[] args) {
         // 1.创建RPC服务器实例（服务提供方）
-        NettyServer server = new NettyServer();   // 默认构造方式说明使用了配置文件方式来配置注册中心
+        NettyRpcServer server = new NettyRpcServer();   // 默认构造方式说明使用了配置文件方式来配置注册中心
         // ZKRegistryProperties registryProperties = ZKServiceRegistry.builder()
         //          .address(127.0.0.1)
         //          .password(admin)
@@ -31,7 +30,7 @@ public class ServerMain {
         // 如果不造成冲突的话，构建服务标识步骤可以省略掉
         // server.registerService(HelloService.class, serviceImpl);
 
-        // 4.开始提供服务(请求响应)
+        // 4.开始提供服务(接收请求进行响应)
         server.start();
     }
 

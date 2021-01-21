@@ -21,9 +21,9 @@ import lombok.ToString;
 @Builder
 public class RpcMessage {
 
-    private byte serialization;
+    private Byte serialization;
 
-    private byte messageType;
+    private Byte messageType;
 
     private Object data;
 

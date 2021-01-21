@@ -6,6 +6,7 @@ import github.genelin.remoting.constants.RpcConstants;
 import github.genelin.remoting.dto.RpcMessage;
 import github.genelin.serialization.Serializer;
 import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToByteEncoder;
 import lombok.extern.slf4j.Slf4j;
@@ -25,6 +26,7 @@ import lombok.extern.slf4j.Slf4j;
  * @createTime 2020/12/21 15:15
  */
 @Slf4j
+@Sharable
 public class RpcMessageEncoder extends MessageToByteEncoder<RpcMessage> {
 
     @Override
