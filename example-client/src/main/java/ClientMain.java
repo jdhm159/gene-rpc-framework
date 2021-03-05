@@ -4,6 +4,7 @@ import github.genelin.remoting.transport.netty.client.NettyRpcClient;
 import service.HelloService;
 
 /**
+ * 普通方式
  * @author gene lin
  * @createTime 2020/12/22 9:22
  */
@@ -27,10 +28,10 @@ public class ClientMain {
 
         // 3.获取接口实例（构建动态代理）
         HelloService helloService = client.getInstance(serviceProperties, HelloService.class);
-        // HelloService helloService = client.getInstance(HelloService.class);      // 使用默认服务标识(group及version都为"")： 接口名 + "" + ""
+        // HelloService helloService = client.getInstance(HelloService.class);
+        // 使用默认服务标识(group及version都为"")： 接口名 + "" + ""
 
         // 4.使用实例
-
         System.out.println(helloService.hello("gene"));
         System.out.println(helloService.hello("lin"));
 

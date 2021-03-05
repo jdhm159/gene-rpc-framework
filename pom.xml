@@ -23,7 +23,7 @@
     <slf4j.version>1.7.25</slf4j.version>
     <!-- zookeeper curator-->
     <zookeeper.curator.version>4.2.0</zookeeper.curator.version>
-
+    <spring.context.version>5.3.3</spring.context.version>
   </properties>
 
   <modules>
